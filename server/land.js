@@ -329,35 +329,40 @@ server.listen(3030, () => {
             }
         }
 
-        // third step: update alive players' status, kill eaten players
+        // third step: kill eaten players
         for (let player of playerByKey.values()) {
             if (!deadIds.has(player.id)) {
-                const index = player.x + player.y * width;
-                if (image[index * 2] != player.id) {
-                    player.conquering = true;
-                    if (image[index * 2 + 1] != 0) {
-                        deadIds.add(image[index * 2 + 1]);
-                        let victim = null;
-                        for (player of playerByKey.values()) {
-                            if (player.id == image[index * 2 + 1]) {
-                                victim = player.name;
-                                break;
-                            }
-                        }
-                        if (victim != null) {
-                            newKills.push({
-                                killer: player.name,
-                                victim: victim,
-                            });
+                if (image[index * 2 + 1] != 0) {
+                    deadIds.add(image[index * 2 + 1]);
+                    let victim = null;
+                    for (player of playerByKey.values()) {
+                        if (player.id == image[index * 2 + 1]) {
+                            victim = player.name;
+                            break;
                         }
                     }
+                    if (victim != null) {
+                        newKills.push({
+                            killer: player.name,
+                            victim: victim,
+                        });
+                    }
+                }
+            }
+        }
+
+        // fourth step: update alive players' status
+        for (let player of playerByKey.values()) {
+            if (!deadIds.has(player.id)) {
+                if (image[index * 2] != player.id) {
+                    player.conquering = true;
                     image[index * 2 + 1] = player.id;
                     trailUpdateByIndex.set(index, player.id);
                 }
             }
         }
 
-        // fourth step: reset dead players tiles and update scores
+        // fifth step: reset dead players tiles and update scores
         for (let player of playerByKey.values()) {
             player.score = 0;
         }
@@ -386,7 +391,7 @@ server.listen(3030, () => {
             }
         }
 
-        // fifth step: insert new players
+        // sixth step: insert new players
         const createdPlayerByConnection = new Map();
         if (newPlayerByConnection.size > 0) {
             let availableIds = new Set();
