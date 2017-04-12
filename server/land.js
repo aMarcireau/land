@@ -31,6 +31,29 @@ function Task(connection, type, parameters = null) {
     this.parameters = parameters;
 };
 
+/// kills stores the kills by player (including suicides).
+const kills = new Map();
+if (fs.existsSync(path.join(__dirname, 'kills.csv'))) {
+    fs.readFileSync(path.join(__dirname, 'kills.csv')).toString().split('\n').filter(line => line != '').map(line => {
+        const data = line.split(/(?:,\t|,)/);
+        return {
+            killer: data[0],
+            victim: data[1],
+        };
+    }).forEach(kill => {
+        if (!kills.has(kill.killer)) {
+            kills.set(kill.killer, new Map());
+        }
+        if (!kills.get(kill.killer).has(kill.victim)) {
+            kills.get(kill.killer).set(kill.victim, 1);
+        } else {
+            kills.get(kill.killer).set(kill.victim, kills.get(kill.killer).get(kill.victim) + 1);
+        }
+    });
+} else {
+    fs.closeSync(fs.openSync(path.join(__dirname, 'kills.csv'), 'w'));
+}
+
 /// floodFill fills the target connected area in the image.
 function floodFill(image, width, height, x, y, targetId, replacementId) {
     const index = x + y * width;
@@ -96,8 +119,23 @@ const tasks = [];
 const connections = new Set();
 
 const server = http.createServer((request, response) => {
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    fs.createReadStream(path.join(__dirname, 'viewer.html')).pipe(response);
+    if (request.url == '/kills') {
+        response.writeHead(200, {'Content-Type': 'application/json'});
+        const killsObject = {};
+        for (let [killer, victims] of kills) {
+            killsObject[killer] = {};
+            for (let [victim, count] of victims) {
+                killsObject[killer][victim] = count;
+            }
+        }
+        response.end(JSON.stringify(killsObject));
+    } else if (request.url == '/') {
+        response.writeHead(200, {'Content-Type': 'text/html'});
+        fs.createReadStream(path.join(__dirname, 'viewer.html')).pipe(response);
+    } else {
+        response.writeHead(404);
+        response.end();
+    }
 });
 
 server.listen(3030, () => {
@@ -186,6 +224,7 @@ server.listen(3030, () => {
         const territoryUpdateByIndex = new Map();
         const trailUpdateByIndex = new Map();
         const playerPositionById = new Map();
+        const newKills = [];
 
         // first step: move players, kill suicidees
         const deadIds = new Set();
@@ -214,6 +253,10 @@ server.listen(3030, () => {
             }
             if (dead || image[(player.x + player.y * width) * 2 + 1] == player.id) {
                 deadIds.add(player.id);
+                newKills.push({
+                    killer: player.name,
+                    victim: player.name,
+                });
             }
         }
 
@@ -273,6 +316,10 @@ server.listen(3030, () => {
                                 for (let otherPlayer of playerByKey.values()) {
                                     if (otherPlayer.id != player.id && otherPlayer.x == x && otherPlayer.y == y) {
                                         deadIds.add(otherPlayer.id);
+                                        newKills.push({
+                                            killer: player.name,
+                                            victim: otherPlayer.name,
+                                        });
                                     }
                                 }
                             }
@@ -290,6 +337,10 @@ server.listen(3030, () => {
                     player.conquering = true;
                     if (image[index * 2 + 1] != 0) {
                         deadIds.add(image[index * 2 + 1]);
+                        newKills.push({
+                            killer: player.name,
+                            victim: playerByKey.values().filter(player => player.id == image[index * 2 + 1])[0].name,
+                        });
                     }
                     image[index * 2 + 1] = player.id;
                     trailUpdateByIndex.set(index, player.id);
@@ -387,6 +438,19 @@ server.listen(3030, () => {
                     errorByConnection.set(connection, 'there is no place left for you');
                 }
             }
+        }
+
+        // update the kills database
+        for (kill of newKills) {
+            if (!kills.has(kill.killer)) {
+                kills.set(kill.killer, new Map());
+            }
+            if (!kills.get(kill.killer).has(kill.victim)) {
+                kills.get(kill.killer).set(kill.victim, 1);
+            } else {
+                kills.get(kill.killer).set(kill.victim, kills.get(kill.killer).get(kill.victim) + 1);
+            }
+            fs.appendFileSync(path.join(__dirname, 'kills.csv'), `${kill.killer},\t${kill.victim}\n`);
         }
 
         // send the new image to each connection
