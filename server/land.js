@@ -336,9 +336,9 @@ server.listen(3030, () => {
                 if (image[index * 2 + 1] != 0) {
                     deadIds.add(image[index * 2 + 1]);
                     let victim = null;
-                    for (player of playerByKey.values()) {
-                        if (player.id == image[index * 2 + 1]) {
-                            victim = player.name;
+                    for (let otherPlayer of playerByKey.values()) {
+                        if (otherPlayer.id == image[index * 2 + 1]) {
+                            victim = otherPlayer.name;
                             break;
                         }
                     }
