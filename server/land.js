@@ -336,24 +336,24 @@ server.listen(3030, () => {
                 const index = player.x + player.y * width;
                 if (image[index * 2 + 1] != 0) {
                     eatenPlayers.add(image[index * 2 + 1]);
+                    let victim = null;
+                    for (let otherPlayer of playerByKey.values()) {
+                        if (otherPlayer.id == image[index * 2 + 1]) {
+                            victim = otherPlayer.name;
+                            break;
+                        }
+                    }
+                    if (victim != null) {
+                        newKills.push({
+                            killer: player.name,
+                            victim: victim,
+                        });
+                    }
                 }
             }
         }
         for (let playerId of eatenPlayers) {
             deadIds.add(playerId);
-            let victim = null;
-            for (let otherPlayer of playerByKey.values()) {
-                if (otherPlayer.id == image[index * 2 + 1]) {
-                    victim = otherPlayer.name;
-                    break;
-                }
-            }
-            if (victim != null) {
-                newKills.push({
-                    killer: player.name,
-                    victim: victim,
-                });
-            }
         }
 
         // fourth step: kill players on the same tile
