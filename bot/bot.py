@@ -62,8 +62,8 @@ def play(address, name, handleChange):
         if data[0] == '3':
             parameters['width'] = int(data[1])
             parameters['height'] = int(data[2])
-            parameters['territories'] = data[3].split(',')
-            parameters['trails'] = data[4].split(',')
+            parameters['territories'] = [int(territory) for territory in data[3].split(',')]
+            parameters['trails'] = [int(trail) for trail in data[4].split(',')]
             parameters['players'] = {}
             if data[5] != '-':
                 for player in data[5].split(','):
