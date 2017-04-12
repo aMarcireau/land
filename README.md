@@ -10,4 +10,6 @@ Run `python bot.py` to run the bot.
 ## Server
 
 Install [nodejs](https://nodejs.org) and run `npm install`.
-Run `node land.js` to start the server.
+Run `node land.js` to start the server. The following routes are available:
+- *http://localhost:3030/* is an HTML game viewer
+- *http://localhost:3030/kills* lists kills in JSON format
