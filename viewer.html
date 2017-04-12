@@ -1,0 +1,485 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Land</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                background-color: #002b36;
+            }
+
+            canvas {
+                -webkit-user-select: none;
+                   -moz-user-select: none;
+                    -ms-user-select: none;
+                        user-select: none;
+                width: calc(100% - 300px);
+                height: 100%;
+            }
+
+            canvas:hover {
+                cursor: pointer;
+            }
+
+            #players {
+                position: fixed;
+                right: 0;
+                top: 50px;
+                width: 300px;
+                height: calc(100% - 50px);
+                overflow: scroll;
+                border-left: 1px solid #fdf6e3;
+            }
+
+            #players p {
+                margin: 0;
+                padding: 20px;
+                vertical-align: middle;
+                width: 100%;
+                font-family: sans-serif;
+            }
+
+            #controls {
+                background-color: #002b36;
+                border-left: 1px solid #fdf6e3;
+                border-bottom: 1px solid #fdf6e3;
+                position: fixed;
+                right: 0;
+                top: 0;
+                height: 50px;
+                width: 300px;
+                -webkit-user-select: none;
+                   -moz-user-select: none;
+                    -ms-user-select: none;
+                        user-select: none;
+            }
+
+            #controls div,
+            #controls span {
+                display: inline-block;
+                width: 50%;
+                height: 49px;
+                line-height: 49px;
+                text-align: center;
+                vertical-align: middle;
+                font-family: sans-serif;
+                color: #fdf6e3;
+            }
+
+            #controls div:not(:last-of-type) {
+                border-right: 1px solid #fdf6e3;
+            }
+
+            #controls div#zoom-in:hover,
+            #controls div#zoom-out:hover,
+            #controls div#zoom-in:active,
+            #controls div#zoom-out:active {
+                background-color: #586e75;
+                cursor: pointer;
+            }
+
+            #controls div#zoom-in.disabled,
+            #controls div#zoom-out.disabled,
+            #controls div#zoom-in.disabled:hover,
+            #controls div#zoom-out.disabled:hover,
+            #controls div#zoom-in.disabled:active,
+            #controls div#zoom-out.disabled:active {
+                background-color: #586e75;
+                cursor: default;
+            }
+        </style>
+        <script>
+            var superSolarizedColors = [[253, 246, 227], [181, 136, 0], [203, 74, 22], [220, 49, 47], [211, 53, 129], [108, 113, 195], [38, 139, 209], [42, 161, 151], [133, 153, 0], [193, 109, 14], [211, 64, 35], [217, 51, 89], [169, 90, 162], [83, 126, 202], [48, 150, 181], [108, 156, 91], [158, 145, 0], [187, 123, 7], [198, 93, 18], [207, 69, 29], [215, 57, 41], [218, 50, 68], [214, 52, 109], [191, 75, 146], [143, 102, 179], [96, 119, 199], [65, 132, 206], [45, 144, 195], [46, 155, 166], [86, 158, 122], [123, 154, 58], [146, 149, 0], [169, 141, 0], [184, 130, 3], [190, 116, 11], [195, 101, 16], [200, 84, 20], [205, 72, 25], [209, 67, 32], [213, 61, 38], [217, 53, 44], [219, 50, 58], [218, 50, 79], [216, 51, 99], [212, 53, 119], [201, 65, 137], [181, 83, 154], [157, 96, 170], [127, 108, 187], [102, 116, 197], [90, 123, 201], [74, 129, 204], [53, 135, 208], [42, 141, 202], [47, 147, 188], [47, 152, 173], [44, 158, 159], [69, 159, 137], [99, 157, 107], [116, 155, 75], [128, 153, 37], [139, 151, 0], [152, 147, 0], [164, 143, 0], [175, 139, 0], [182, 133, 1], [185, 126, 5], [189, 120, 9], [191, 112, 12], [194, 105, 15], [197, 97, 17], [199, 89, 19], [201, 79, 21], [204, 73, 23], [206, 71, 27], [208, 68, 31], [210, 65, 34], [212, 62, 37], [214, 59, 40], [216, 55, 42], [218, 52, 45], [219, 50, 52], [219, 50, 63], [218, 50, 73], [217, 51, 84], [216, 51, 94], [215, 52, 104], [213, 52, 114], [212, 53, 124], [206, 60, 133], [196, 70, 142], [186, 79, 150], [175, 86, 158], [163, 93, 166], [150, 99, 174], [135, 105, 183], [118, 110, 191], [105, 114, 196], [99, 118, 198], [93, 121, 200], [86, 124, 202], [79, 128, 203], [70, 131, 205], [59, 134, 207], [46, 137, 209], [40, 140, 206], [44, 143, 199], [46, 145, 191], [47, 148, 184], [48, 151, 177], [47, 154, 170], [46, 156, 162], [43, 159, 155], [58, 160, 144], [79, 159, 129], [93, 158, 114], [104, 157, 99], [112, 156, 83], [120, 155, 67], [125, 154, 48], [130, 153, 23], [136, 152, 0], [142, 150, 0], [149, 148, 0], [155, 146, 0], [161, 144, 0], [166, 142, 0], [172, 140, 0], [178, 138, 0], [181, 136, 0], [203, 74, 22], [220, 49, 47], [211, 53, 129], [108, 113, 195], [38, 139, 209], [42, 161, 151], [133, 153, 0], [193, 109, 14], [211, 64, 35], [217, 51, 89], [169, 90, 162], [83, 126, 202], [48, 150, 181], [108, 156, 91], [158, 145, 0], [187, 123, 7], [198, 93, 18], [207, 69, 29], [215, 57, 41], [218, 50, 68], [214, 52, 109], [191, 75, 146], [143, 102, 179], [96, 119, 199], [65, 132, 206], [45, 144, 195], [46, 155, 166], [86, 158, 122], [123, 154, 58], [146, 149, 0], [169, 141, 0], [184, 130, 3], [190, 116, 11], [195, 101, 16], [200, 84, 20], [205, 72, 25], [209, 67, 32], [213, 61, 38], [217, 53, 44], [219, 50, 58], [218, 50, 79], [216, 51, 99], [212, 53, 119], [201, 65, 137], [181, 83, 154], [157, 96, 170], [127, 108, 187], [102, 116, 197], [90, 123, 201], [74, 129, 204], [53, 135, 208], [42, 141, 202], [47, 147, 188], [47, 152, 173], [44, 158, 159], [69, 159, 137], [99, 157, 107], [116, 155, 75], [128, 153, 37], [139, 151, 0], [152, 147, 0], [164, 143, 0], [175, 139, 0], [182, 133, 1], [185, 126, 5], [189, 120, 9], [191, 112, 12], [194, 105, 15], [197, 97, 17], [199, 89, 19], [201, 79, 21], [204, 73, 23], [206, 71, 27], [208, 68, 31], [210, 65, 34], [212, 62, 37], [214, 59, 40], [216, 55, 42], [218, 52, 45], [219, 50, 52], [219, 50, 63], [218, 50, 73], [217, 51, 84], [216, 51, 94], [215, 52, 104], [213, 52, 114], [212, 53, 124], [206, 60, 133], [196, 70, 142], [186, 79, 150], [175, 86, 158], [163, 93, 166], [150, 99, 174], [135, 105, 183], [118, 110, 191], [105, 114, 196], [99, 118, 198], [93, 121, 200], [86, 124, 202], [79, 128, 203], [70, 131, 205], [59, 134, 207], [46, 137, 209], [40, 140, 206], [44, 143, 199], [46, 145, 191], [47, 148, 184], [48, 151, 177], [47, 154, 170], [46, 156, 162], [43, 159, 155], [58, 160, 144], [79, 159, 129], [93, 158, 114], [104, 157, 99], [112, 156, 83], [120, 155, 67], [125, 154, 48], [130, 153, 23], [136, 152, 0], [142, 150, 0], [149, 148, 0], [155, 146, 0], [161, 144, 0], [166, 142, 0], [172, 140, 0]];
+
+            var zoomLevels = [1, 3, 7, 20, 50];
+            var zoomLevel = 2;
+            var complementaryColor = [0, 43, 54];
+            var drawComponents = {
+                canvas: null,
+                width: null,
+                height: null,
+                context: null,
+                xOffset: null,
+                yOffset: null,
+                hiddenCanvas: null,
+                hiddenContext: null,
+                image: null,
+                territories: null,
+                trails: null,
+                players: null,
+            };
+
+            /// drawTerritoryPixel draws the target meta-pixel (3x3 actual pixels).
+            /// x and y are given in meta-image coordinates.
+            var drawTerritoryPixel = function(x, y, colorIndex) {
+                var color = superSolarizedColors[colorIndex];
+                for (var actualX = 3 * x; actualX < 3 * x + 3; ++actualX) {
+                    for (var actualY = 3 * y; actualY < 3 * y + 3; ++actualY) {
+                        var index = (actualX + actualY * drawComponents.width * 3) * 4;
+                        drawComponents.image.data[index] = color[0];
+                        drawComponents.image.data[index + 1] = color[1];
+                        drawComponents.image.data[index + 2] = color[2];
+                        drawComponents.image.data[index + 3] = 255;
+                    }
+                }
+            };
+
+            /// drawTrailPixel draws the target meta-pixel (3x3 actual pixels).
+            /// x and y are given in meta-image coordinates.
+            var drawTrailPixel = function(x, y, colorIndex) {
+                var color = superSolarizedColors[colorIndex];
+                for (var actualX = 3 * x; actualX < 3 * x + 3; actualX += 2) {
+                    for (var actualY = 3 * y; actualY < 3 * y + 3; actualY += 2) {
+                        var index = (actualX + actualY * drawComponents.width * 3) * 4;
+                        drawComponents.image.data[index] = color[0];
+                        drawComponents.image.data[index + 1] = color[1];
+                        drawComponents.image.data[index + 2] = color[2];
+                        drawComponents.image.data[index + 3] = 255;
+                    }
+                }
+                for (var actualX = 3 * x; actualX < 3 * x + 3; ++actualX) {
+                    var index = (actualX + (3 * y + 1) * drawComponents.width * 3) * 4;
+                    drawComponents.image.data[index] = complementaryColor[0];
+                    drawComponents.image.data[index + 1] = complementaryColor[1];
+                    drawComponents.image.data[index + 2] = complementaryColor[2];
+                    drawComponents.image.data[index + 3] = 255;
+                }
+                for (var actualY = 3 * y; actualY < 3 * y + 3; actualY += 2) {
+                    var index = ((3 * x + 1) + actualY * drawComponents.width * 3) * 4;
+                    drawComponents.image.data[index] = complementaryColor[0];
+                    drawComponents.image.data[index + 1] = complementaryColor[1];
+                    drawComponents.image.data[index + 2] = complementaryColor[2];
+                    drawComponents.image.data[index + 3] = 255;
+                }
+            };
+
+            /// drawPlayerPixel draws the target meta-pixel (3x3 actual pixels).
+            /// x and y are given in meta-image coordinates.
+            var drawPlayerPixel = function(x, y, colorIndex) {
+                var color = superSolarizedColors[colorIndex];
+                for (var actualX = 3 * x; actualX < 3 * x + 3; ++actualX) {
+                    for (var actualY = 3 * y; actualY < 3 * y + 3; ++actualY) {
+                        var index = (actualX + actualY * drawComponents.width * 3) * 4;
+                        drawComponents.image.data[index] = complementaryColor[0];
+                        drawComponents.image.data[index + 1] = complementaryColor[1];
+                        drawComponents.image.data[index + 2] = complementaryColor[2];
+                        drawComponents.image.data[index + 3] = 255;
+                    }
+                }
+                var index = (3 * x + 1 + (3 * y + 1) * drawComponents.width * 3) * 4;
+                drawComponents.image.data[index] = color[0];
+                drawComponents.image.data[index + 1] = color[1];
+                drawComponents.image.data[index + 2] = color[2];
+                drawComponents.image.data[index + 3] = 255;
+            };
+
+            /// drawPainting draws the image on the canvas.
+            var drawPainting = function() {
+                drawComponents.context.imageSmoothingEnabled = false;
+                drawComponents.hiddenContext.putImageData(drawComponents.image, 0, 0);
+                drawComponents.context.clearRect(0, 0, drawComponents.canvas.width, drawComponents.canvas.height);
+                drawComponents.context.drawImage(
+                    drawComponents.hiddenCanvas,
+                    drawComponents.xOffset,
+                    drawComponents.yOffset,
+                    drawComponents.width * zoomLevels[zoomLevel],
+                    drawComponents.height * zoomLevels[zoomLevel]
+                );
+            };
+
+            window.addEventListener('load', function() {
+                var playersNode = document.getElementById('players');
+
+                // open the socket
+                var socket = new WebSocket('ws://localhost:3030');
+                var initialised = false;
+                socket.addEventListener('message', function(event) {
+                    data = event.data.split('|');
+                    if (data[0] == 3) {
+                        drawComponents.width = parseInt(data[1]);
+                        drawComponents.height = parseInt(data[2]);
+
+                        // canvas and painting
+                        drawComponents.canvas = document.getElementById('painting-canvas');
+                        drawComponents.context = drawComponents.canvas.getContext('2d');
+                        drawComponents.image = drawComponents.context.createImageData(drawComponents.width * 3, drawComponents.height * 3);
+                        drawComponents.xOffset = 0;
+                        drawComponents.yOffset = 0;
+                        drawComponents.hiddenCanvas = document.createElement('canvas');
+                        drawComponents.hiddenCanvas.width = drawComponents.width * 3;
+                        drawComponents.hiddenCanvas.height = drawComponents.height * 3;
+                        drawComponents.hiddenContext = drawComponents.hiddenCanvas.getContext('2d');
+
+                        // resize listener
+                        window.addEventListener('resize', function() {
+                            drawComponents.canvas.width = window.innerWidth - 300;
+                            drawComponents.canvas.height = window.innerHeight;
+                            drawPainting();
+                        });
+                        drawComponents.canvas.width = window.innerWidth - 300;
+                        drawComponents.canvas.height = window.innerHeight;
+
+                        // initialise the image
+                        drawComponents.territories = data[3].split(',');
+                        drawComponents.trails = data[4].split(',');
+                        for (var index = 0; index < drawComponents.width * drawComponents.height; ++index) {
+                            var trailId = parseInt(drawComponents.trails[index]);
+                            if (trailId > 0) {
+                                drawTrailPixel(
+                                    index % drawComponents.width,
+                                    drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                    trailId
+                                );
+                            } else {
+                                var territoryId = parseInt(drawComponents.territories[index]);
+                                drawTerritoryPixel(
+                                    index % drawComponents.width,
+                                    drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                    territoryId
+                                );
+                            }
+                        }
+
+                        // update players
+                        while (playersNode.firstChild) {
+                            playersNode.removeChild(playersNode.firstChild);
+                        }
+                        var playersToDisplay = [];
+                        if (data[5] != '-') {
+                            drawComponents.players = data[5].split(',');
+                            for (var playerIndex = 0; playerIndex < drawComponents.players.length; ++playerIndex) {
+                                var playerData = drawComponents.players[playerIndex].split(':');
+                                var id = parseInt(playerData[0]);
+                                var name = playerData[1];
+                                var index = parseInt(playerData[2]);
+                                var score = parseInt(playerData[3]);
+                                drawPlayerPixel(
+                                    index % drawComponents.width,
+                                    drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                    id
+                                );
+                                playersToDisplay.push({id: id, name: name, score: score});
+                            }
+                        } else {
+                            drawComponents.players = [];
+                        }
+                        playersToDisplay.sort(function(firstPlayer, secondPlayer) {
+                            if (firstPlayer.score == secondPlayer.score) {
+                                return firstPlayer.name.localeCompare(secondPlayer.name);
+                            }
+                            return secondPlayer.score - firstPlayer.score;
+                        });
+                        playersToDisplay.forEach(function(player) {
+                            var pNode = document.createElement('p');
+                            pNode.innerHTML = [
+                                player.name,
+                                ' (',
+                                player.score,
+                                ' - ',
+                                (player.score / (drawComponents.width * drawComponents.height) * 100).toFixed(1),
+                                ' %)',
+                            ].join('');
+                            var color = superSolarizedColors[player.id];
+                            pNode.style.color = 'rgb(' + color[0].toString() + ',' + color[1].toString() + ',' + color[2].toString() + ')';
+                            playersNode.appendChild(pNode);
+                        });
+
+                        drawPainting();
+
+                        // zoom buttons
+                        var zoomIn = document.getElementById('zoom-in');
+                        var zoomOut = document.getElementById('zoom-out');
+                        zoomIn.className = '';
+                        zoomOut.className = '';
+                        zoomIn.addEventListener('click', function() {
+                            if (zoomLevel < zoomLevels.length - 1) {
+                                ++zoomLevel;
+                                zoomOut.className = '';
+                                if (zoomLevel == zoomLevels.length - 1) {
+                                    zoomIn.className = 'disabled';
+                                }
+                                drawComponents.xOffset = window.innerWidth / 2 - (window.innerWidth / 2 - drawComponents.xOffset) / zoomLevels[zoomLevel - 1] * zoomLevels[zoomLevel];
+                                drawComponents.yOffset = (window.innerHeight - 50) / 2 - ((window.innerHeight - 50) / 2 - drawComponents.yOffset) / zoomLevels[zoomLevel - 1] * zoomLevels[zoomLevel];
+                                drawPainting();
+                            }
+                        });
+                        zoomOut.addEventListener('click', function() {
+                            if (zoomLevel > 0) {
+                                --zoomLevel;
+                                zoomIn.className = ''
+                                if (zoomLevel == 0) {
+                                    zoomOut.className = 'disabled';
+                                }
+                                drawComponents.xOffset = window.innerWidth / 2 - (window.innerWidth / 2 - drawComponents.xOffset) / zoomLevels[zoomLevel + 1] * zoomLevels[zoomLevel];
+                                drawComponents.yOffset = (window.innerHeight - 50) / 2 - ((window.innerHeight - 50) / 2 - drawComponents.yOffset) / zoomLevels[zoomLevel + 1] * zoomLevels[zoomLevel];
+                                drawPainting();
+                            }
+                        });
+
+                        // click events (drag and paint)
+                        var dragStartPositionX;
+                        var dragStartPositionY;
+                        var dragStartXOffset;
+                        var dragStartYOffset;
+                        var mouseIsDown = false;
+                        drawComponents.canvas.addEventListener('mousedown', function(event) {
+                            dragStartPositionX = event.offsetX;
+                            dragStartPositionY = event.offsetY;
+                            dragStartXOffset = drawComponents.xOffset;
+                            dragStartYOffset = drawComponents.yOffset;
+                            mouseIsDown = true;
+                            drawComponents.canvas.style.cursor = 'move';
+                        });
+                        drawComponents.canvas.addEventListener('mousemove', function(event) {
+                            if (mouseIsDown) {
+                                drawComponents.xOffset = dragStartXOffset + event.offsetX - dragStartPositionX;
+                                drawComponents.yOffset = dragStartYOffset + event.offsetY - dragStartPositionY;
+                                drawPainting();
+                            }
+                        });
+                        drawComponents.canvas.addEventListener('mouseup', function(event) {
+                            mouseIsDown = false;
+                            drawComponents.canvas.style.cursor = 'pointer';
+                        });
+                        return;
+                    }
+
+                    if (drawComponents.image == null) {
+                        return;
+                    }
+
+                    // clean pixels
+                    for (var playerIndex = 0; playerIndex < drawComponents.players.length; ++playerIndex) {
+                        var index = parseInt(drawComponents.players[playerIndex].split(':')[2]);
+                        var trailId = parseInt(drawComponents.trails[index]);
+                        if (trailId > 0) {
+                            drawTrailPixel(
+                                index % drawComponents.width,
+                                drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                trailId
+                            );
+                        } else {
+                            drawTerritoryPixel(
+                                index % drawComponents.width,
+                                drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                parseInt(drawComponents.territories[index])
+                            );
+                        }
+                    }
+
+                    // update trails
+                    if (data[4] != '-') {
+                        var trailsUpdates = data[4].split(',');
+                        for (var trailIndex = 0; trailIndex < trailsUpdates.length; ++trailIndex) {
+                            var indexAndId = trailsUpdates[trailIndex].split(':');
+                            var index = parseInt(indexAndId[0]);
+                            var trailId = parseInt(indexAndId[1]);
+                            drawComponents.trails[index] = trailId;
+                            if (trailId > 0) {
+                                drawTrailPixel(
+                                    index % drawComponents.width,
+                                    drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                    trailId
+                                );
+                            } else {
+                                drawTerritoryPixel(
+                                    index % drawComponents.width,
+                                    drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                    parseInt(drawComponents.territories[index])
+                                );
+                            }
+                        }
+                    }
+
+                    // update territories
+                    if (data[3] != '-') {
+                        var territoriesUpdates = data[3].split(',');
+                        for (var territoryIndex = 0; territoryIndex < territoriesUpdates.length; ++territoryIndex) {
+                            var indexAndId = territoriesUpdates[territoryIndex].split(':');
+                            var index = parseInt(indexAndId[0]);
+                            var territoryId = parseInt(indexAndId[1]);
+                            var trailId = parseInt(drawComponents.trails[index]);
+                            drawComponents.territories[index] = territoryId;
+                            if (trailId == 0) {
+                                drawTerritoryPixel(
+                                    index % drawComponents.width,
+                                    drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                    territoryId
+                                );
+                            }
+                        }
+                    }
+
+                    // update players
+                    while (playersNode.firstChild) {
+                        playersNode.removeChild(playersNode.firstChild);
+                    }
+                    var playersToDisplay = [];
+                    if (data[5] != '-') {
+                        drawComponents.players = data[5].split(',');
+                        for (var playerIndex = 0; playerIndex < drawComponents.players.length; ++playerIndex) {
+                            var playerData = drawComponents.players[playerIndex].split(':');
+                            var id = parseInt(playerData[0]);
+                            var name = playerData[1];
+                            var index = parseInt(playerData[2]);
+                            var score = parseInt(playerData[3]);
+                            drawPlayerPixel(
+                                index % drawComponents.width,
+                                drawComponents.height - 1 - Math.floor(index / drawComponents.width),
+                                id
+                            );
+                            playersToDisplay.push({id: id, name: name, score: score});
+                        }
+                    } else {
+                        drawComponents.players = [];
+                    }
+                    playersToDisplay.sort(function(firstPlayer, secondPlayer) {
+                        if (firstPlayer.score == secondPlayer.score) {
+                            return firstPlayer.name.localeCompare(secondPlayer.name);
+                        }
+                        return secondPlayer.score - firstPlayer.score;
+                    });
+                    playersToDisplay.forEach(function(player) {
+                        var pNode = document.createElement('p');
+                        pNode.innerHTML = [
+                            player.name,
+                            ' (',
+                            player.score,
+                            ' - ',
+                            (player.score / (drawComponents.width * drawComponents.height) * 100).toFixed(1),
+                            ' %)',
+                        ].join('');
+                        var color = superSolarizedColors[player.id];
+                        pNode.style.color = 'rgb(' + color[0].toString() + ',' + color[1].toString() + ',' + color[2].toString() + ')';
+                        playersNode.appendChild(pNode);
+                    });
+
+                    // update the drawing
+                    drawPainting();
+                });
+                socket.addEventListener('open', function() {
+                    socket.send('1,-');
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <canvas id="painting-canvas"></canvas>
+
+        <div id="controls"><!--
+            --><div id="zoom-in" class="disabled">+</div><!--
+            --><div id="zoom-out" class="disabled">-</div><!--
+        --></div>
+
+        <div id="players"></div>
+    </body>
+</html>
