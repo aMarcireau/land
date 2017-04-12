@@ -330,25 +330,29 @@ server.listen(3030, () => {
         }
 
         // third step: kill eaten players
+        const eatenPlayers = new Set();
         for (let player of playerByKey.values()) {
             if (!deadIds.has(player.id)) {
                 const index = player.x + player.y * width;
                 if (image[index * 2 + 1] != 0) {
-                    deadIds.add(image[index * 2 + 1]);
-                    let victim = null;
-                    for (let otherPlayer of playerByKey.values()) {
-                        if (otherPlayer.id == image[index * 2 + 1]) {
-                            victim = otherPlayer.name;
-                            break;
-                        }
-                    }
-                    if (victim != null) {
-                        newKills.push({
-                            killer: player.name,
-                            victim: victim,
-                        });
-                    }
+                    eatenPlayers.add(image[index * 2 + 1]);
                 }
+            }
+        }
+        for (let playerId of eatenPlayers) {
+            deadIds.add(playerId);
+            let victim = null;
+            for (let otherPlayer of playerByKey.values()) {
+                if (otherPlayer.id == image[index * 2 + 1]) {
+                    victim = otherPlayer.name;
+                    break;
+                }
+            }
+            if (victim != null) {
+                newKills.push({
+                    killer: player.name,
+                    victim: victim,
+                });
             }
         }
 
