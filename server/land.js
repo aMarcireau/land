@@ -337,10 +337,19 @@ server.listen(3030, () => {
                     player.conquering = true;
                     if (image[index * 2 + 1] != 0) {
                         deadIds.add(image[index * 2 + 1]);
-                        newKills.push({
-                            killer: player.name,
-                            victim: playerByKey.values().filter(player => player.id == image[index * 2 + 1])[0].name,
-                        });
+                        let victim = null;
+                        for (player of playerByKey.values()) {
+                            if (player.id == image[index * 2 + 1]) {
+                                victim = player.name;
+                                break;
+                            }
+                        }
+                        if (victim != null) {
+                            newKills.push({
+                                killer: player.name,
+                                victim: victim,
+                            });
+                        }
                     }
                     image[index * 2 + 1] = player.id;
                     trailUpdateByIndex.set(index, player.id);
