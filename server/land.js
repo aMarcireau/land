@@ -332,6 +332,7 @@ server.listen(3030, () => {
         // third step: kill eaten players
         for (let player of playerByKey.values()) {
             if (!deadIds.has(player.id)) {
+                const index = player.x + player.y * width;
                 if (image[index * 2 + 1] != 0) {
                     deadIds.add(image[index * 2 + 1]);
                     let victim = null;
@@ -354,6 +355,7 @@ server.listen(3030, () => {
         // fourth step: update alive players' status
         for (let player of playerByKey.values()) {
             if (!deadIds.has(player.id)) {
+                const index = player.x + player.y * width;
                 if (image[index * 2] != player.id) {
                     player.conquering = true;
                     image[index * 2 + 1] = player.id;
