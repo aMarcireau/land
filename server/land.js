@@ -352,7 +352,23 @@ server.listen(3030, () => {
             }
         }
 
-        // fourth step: update alive players' status
+        // fourth step: kill players on the same tile
+        const sameTilePayers = new Set();
+        for (let player of playerByKey.values()) {
+            if (!deadIds.has(player.id)) {
+                for (let otherPlayer of playerByKey.values()) {
+                    if (!deadIds.has(otherPlayer.id) && otherPlayer.id != player.id && player.x == otherPlayer.x && player.y == otherPlayer.y) {
+                        sameTilePayers.add(player.id);
+                        sameTilePayers.add(otherPlayer.id);
+                    }
+                }
+            }
+        }
+        for (let playerId of sameTilePayers) {
+            deadIds.add(playerId);
+        }
+
+        // fifth step: update alive players' status
         for (let player of playerByKey.values()) {
             if (!deadIds.has(player.id)) {
                 const index = player.x + player.y * width;
@@ -364,7 +380,7 @@ server.listen(3030, () => {
             }
         }
 
-        // fifth step: reset dead players tiles and update scores
+        // sixth step: reset dead players tiles and update scores
         for (let player of playerByKey.values()) {
             player.score = 0;
         }
@@ -393,7 +409,7 @@ server.listen(3030, () => {
             }
         }
 
-        // sixth step: insert new players
+        // seventh step: insert new players
         const createdPlayerByConnection = new Map();
         if (newPlayerByConnection.size > 0) {
             let availableIds = new Set();
