@@ -298,10 +298,9 @@ server.listen(3030, () => {
                     const temporaryWidth = maximumX - minimumX + 2;
                     const temporaryHeight = maximumY - minimumY + 2;
                     let temporaryImage = Buffer.alloc(temporaryWidth * temporaryHeight);
-                    for (let x = minimumX - 1; x < maximumX + 1; ++x) {
-                        for (let y = minimumY - 1; y < maximumY + 1; ++y) {
-                            const index = x + y * width;
-                            if (index >= 0 && index < width * height && image[index * 2] == player.id) {
+                    for (let x = minimumX; x < maximumX; ++x) {
+                        for (let y = minimumY; y < maximumY; ++y) {
+                            if (image[(x + y * width) * 2] == player.id) {
                                 temporaryImage[x - minimumX + 1 + (y - minimumY + 1) * temporaryWidth] = 1;
                             }
                         }
