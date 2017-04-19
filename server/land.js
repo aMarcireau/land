@@ -357,13 +357,14 @@ server.listen(3030, () => {
         }
 
         // fourth step: kill players on the same tile
+        // If two players meet on a pixel owned by one of them, only the other dies.
         const sameTilePayers = new Set();
         for (let player of playerByKey.values()) {
-            if (!deadIds.has(player.id)) {
+            if (!deadIds.has(player.id) && image[(player.x + player.y * width) * 2] != player.id) {
                 for (let otherPlayer of playerByKey.values()) {
-                    if (!deadIds.has(otherPlayer.id) && otherPlayer.id != player.id && player.x == otherPlayer.x && player.y == otherPlayer.y) {
+                    if (otherPlayer.id != player.id && !deadIds.has(otherPlayer.id) && player.x == otherPlayer.x && player.y == otherPlayer.y) {
                         sameTilePayers.add(player.id);
-                        sameTilePayers.add(otherPlayer.id);
+                        break;
                     }
                 }
             }
