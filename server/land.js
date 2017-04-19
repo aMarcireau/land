@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 // settings
-const width = 30; // px
-const height = 30; // px
-const frameDuration = 200; // ms
+const width = 20; // px
+const height = 20; // px
+const frameDuration = 1000; // ms
 const newPlayerPlacementTrials = 10;
 
 /// Player represents a player.
